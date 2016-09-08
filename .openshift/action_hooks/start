@@ -9,4 +9,4 @@ export RATPACK_SERVER__PORT=$OPENSHIFT_DIY_PORT
 LOG_FILE="${OPENSHIFT_LOG_DIR}/application.log"
 
 cd "$OPENSHIFT_REPO_DIR"
-nohup build/installShadow/trail-info/bin/trail-info &> $LOG_FILE &
+nohup build/installShadow/repo/bin/repo &> $LOG_FILE &

@@ -1,12 +1,12 @@
 = Ratpack on Open Shift
-:openshift: ../.openshift
+:openshift: ../.openshift/action_hooks
 Andrew Reitz
 2016 September 08
 
 OpenShift is RedHat’s PaaS, and is very similar to Heroku. I was using Heroku for development of my
 API but was having some issues and didn’t want to pay for hosting before my app was live.
-The issues was that the connection my application to retrieve data from would time out. This is
-most likely that my app was running on some Heroku server that was very far away from the api
+The issues were that the connection my application to retrieve data from would time out. This is
+most likely that my app was running on some Heroku server that was very far away from the API
 server, and on the free tier I can not configure this. I started looking for other options that are
 easy to use and would have a good free tier to get me up and running.
 
@@ -22,7 +22,7 @@ documentation is something we as an industry could do better at.
 Anyways, I landed on OpenShift, since it gives me three free “gears” or apps that I can run.
 This and the documentation seems like a perfect fit. I started digging into how to get Java 8 and
 found that you can create custom “cartridges” or better described as setup scripts (wich you can
-save and publish as a cartrige) for running Java 8 and your own applications that they do not have
+save and publish as a cartridge) for running Java 8 and your own applications that they do not have
 a pre-defined cartridge for. Simple enough. Looks like I just need a build script that would run
 gradle to produce my ratpack jar file, a script to run the application, and finally a script to
 kill the ratpack application.
@@ -35,7 +35,7 @@ https://github.com/ratpack/ratpack/issues/1032[github] I was able to figure it o
 
 From the top let’s create a new ratpack application and get it to run on OpenShift.
 
-First you will want to sign up for an account on
+First, you will want to sign up for an account on
 https://www.openshift.com/devpreview/register.html[OpenShift]. This should be pretty simple since
 they give you the option to log in with a github account.
 
@@ -45,52 +45,100 @@ the boilerplate. The easiest way to install lazybones is with http://sdkman.io/[
 other installation instructions and usage see the
 https://github.com/pledbrook/lazybones[lazybones project on GitHub].
 
-Now that you have lazybones install, lets create our Ratpack application.
+Now that you have lazybones install, let's create our Ratpack application.
 
 [source, bash]
 ----
 $ lazybones create ratpack my-openshift-app
 ----
 
-Next you want to cd into the directory and create the `.openshift` folder. This folder will contain
-scripts that tell Open Shift how to manage your app.
+Next, you want to cd into the directory and create the `.openshift` folder with a `action_hooks`
+subfolder. This folder will contain scripts that tell Open Shift how to manage your app.
 
 [source, bash]
 ----
 $ cd my-openshift-app
-$ mkdir .openshift
+$ mkdir -p .openshift/action_hooks
 ----
 
-First let’s setup the `build` script. This will tell OpenShift how to build your project and where
+First, let’s setup the `build` script. This will tell OpenShift how to build your project and where
 to log the output too.
 
-.openshift/build
+/.openshift/action_hooks/build
 [source, bash]
 ----
-include::{openshift}/build
+include::{openshift}/build[]
 ----
 
-Next let’s make the start script. This will tell OpenShift how to start your application. A few
+Now, let’s make the start script. This will tell OpenShift how to start your application. A few
 key things to note in this file are the exports. We need to set `JAVA_HOME` to
 `/etc/alternatives/java_sdk_1.8.0` because the DIY cartridges ship with Java 1.7. Next we need to
 set `RATPACK_SERVER__ADDRESS` and `RATPACK_SERVER__PORT` to the values provided by OpenShift DIY
 cartridge to tell Ratpack what port and address to bind to. Without this you will get an exception
-from netty about not being able to bind to a socket.
+from netty about not being able to bind to a socket. Note that this script has `repo` in the path
+and as the executable script. This is because no `settings.gradle` file is present setting the
+project name. When this is the case the `shadow` task will name it based off of the project's
+folder. In this case on OpenShift it will be repo.
 
-.openshift/start
+/.openshift/action_hooks/start
 [source, bash]
 ----
-include::{openshift}/start
+include::{openshift}/start[]
 ----
 
 Lastly, we should make a stop script in order for the application to be shut down.
 
-.openshift/stop
+/.openshift/action_hooks/stop
 [source, bash]
 ----
-include::{openshift}/stop
+include::{openshift}/stop[]
+----
+
+Be sure to make all these files executable.
+[source, bash]
+----
+$ chmod +x .openshift/action_hooks/*
 ----
 
 Now that we have our project all setup, we need to create a project in OpenShift. Navigate to your
 OpenShift Console and click the `Add Application…` button. At the bottom of the list of
-cartridges to choose from there should be a Do-It-Youself 0.1. Click it to select it. Next we will
+cartridges to choose from there should be a Do-It-Yourself 0.1. Click it to select it. Fill out
+a public URL you want, choose a region (at the time of this writing aws-us-east-1 is the only
+option that will support Ratpack) and click Create Application.
+
+You will now be at the next steps screen, you can ignore this and just click the link
+"Continue to the application overview page". to get to the project dashboard.
+
+Now in your project create a git repository and add your files.
+Note: the lazybones ratpack project does not come with a `.gitignore`. This may be something you
+want to add.
+
+[source, bash]
+----
+$ git init
+$ git add .
+$ git commit -am "First Commit"
+----
+
+Now to deploy this code to OpenShift we need to add the remote repository that has been created for
+our project. On your project's overview page copy the ssh url and add it as a remote to your
+project.
+
+[source, bash]
+----
+$ git remote add openshift URL_HERE
+----
+
+Finally to deploy your code to OpenShift simply run
+
+[source, bash]
+----
+$ git push openshift master
+----
+
+This will run the `build` and `start` scripts once these complete you will be able to view your app.
+To push any changes just make another commit to the repository and push it, and the changes will
+take effect.
+
+For an example project, and an asciidoctor version of this blog post (both which except pull
+requests) click https://github.com/pieces029/ratpack-open-shift[here].

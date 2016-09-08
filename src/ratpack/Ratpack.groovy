@@ -10,7 +10,7 @@ ratpack {
 
   handlers {
     get {
-      render groovyMarkupTemplate("index.gtpl", title: "My Ratpack App")
+      render groovyMarkupTemplate("index.gtpl", title: "My OpenShift App")
     }
 
     files { dir "public" }
