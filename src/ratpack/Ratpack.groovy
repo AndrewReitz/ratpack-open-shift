@@ -4,6 +4,10 @@ import static ratpack.groovy.Groovy.groovyMarkupTemplate
 import static ratpack.groovy.Groovy.ratpack
 
 ratpack {
+  serverConfig {
+    env()
+  }
+
   bindings {
     module MarkupTemplateModule
   }

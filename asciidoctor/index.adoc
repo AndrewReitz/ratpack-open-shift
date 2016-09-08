@@ -86,6 +86,14 @@ folder. In this case on OpenShift it will be repo.
 include::{openshift}/start[]
 ----
 
+In order for ratpack to know it should read in the values `RATPACK_SERVER__ADDRESS` and
+`RATPACK_SERVER__PORT` `env()` will needed to be added to your applications serverconfig block.
+
+[source, groovy]
+----
+include::../src/ratpack/Ratpack.groovy[lines=6..9]
+----
+
 Lastly, we should make a stop script in order for the application to be shut down.
 
 /.openshift/action_hooks/stop
