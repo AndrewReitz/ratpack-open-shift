@@ -1,4 +1,4 @@
-= Ratpack on Open Shift
+= Ratpack on OpenShift
 :openshift: ../.openshift/action_hooks
 Andrew Reitz
 2016 September 08
