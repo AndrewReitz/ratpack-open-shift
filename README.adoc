@@ -1,3 +1,3 @@
-= Ratpack on Open Shift
+= Ratpack on OpenShift
 
 https://medium.com/@aj.reitz/ratpack-on-open-shift-94e83550fdf2[Full Blog Post @ Medium]
