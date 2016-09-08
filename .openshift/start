@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -x
+
+export JAVA_HOME=/etc/alternatives/java_sdk_1.8.0
+export RATPACK_SERVER__ADDRESS=$OPENSHIFT_DIY_IP
+export RATPACK_SERVER__PORT=$OPENSHIFT_DIY_PORT
+
+LOG_FILE="${OPENSHIFT_LOG_DIR}/application.log"
+
+cd "$OPENSHIFT_REPO_DIR"
+nohup build/installShadow/trail-info/bin/trail-info &> $LOG_FILE &

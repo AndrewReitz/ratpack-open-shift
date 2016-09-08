@@ -1,0 +1,96 @@
+= Ratpack on Open Shift
+:openshift: ../.openshift
+Andrew Reitz
+2016 September 08
+
+OpenShift is RedHat’s PaaS, and is very similar to Heroku. I was using Heroku for development of my
+API but was having some issues and didn’t want to pay for hosting before my app was live.
+The issues was that the connection my application to retrieve data from would time out. This is
+most likely that my app was running on some Heroku server that was very far away from the api
+server, and on the free tier I can not configure this. I started looking for other options that are
+easy to use and would have a good free tier to get me up and running.
+
+Now, finding something that is easy to use is very difficult. I can confirm that almost all
+documentation for different host / cloud infrastructure is awful. I really can’t believe what some
+of these companies post as “Documentation”. That being said, both Heroku, and OpenShift have much
+better docs than the rest, but that is probably because they are very focused on a specific thing
+than twenty or more “cloud” offerings. While we are judging docs, after Heroku and OpenShift, I
+would say next comes Amazon, followed by Google and finally Microsoft, who somehow thinks that
+linking videos is the same as documentation. That being said none of these are great, but
+documentation is something we as an industry could do better at.
+
+Anyways, I landed on OpenShift, since it gives me three free “gears” or apps that I can run.
+This and the documentation seems like a perfect fit. I started digging into how to get Java 8 and
+found that you can create custom “cartridges” or better described as setup scripts (wich you can
+save and publish as a cartrige) for running Java 8 and your own applications that they do not have
+a pre-defined cartridge for. Simple enough. Looks like I just need a build script that would run
+gradle to produce my ratpack jar file, a script to run the application, and finally a script to
+kill the ratpack application.
+
+One thing that took me a bit to figure out was using the `OPENSHIFT_DIY_IP` and
+`OPENSHIFT_DIY_PORT`. I would pass these values in using `-Dratpack.port` and `-Dratpack.address`
+but would get an exception about not being able to bind to the address. As it turns out setting the
+server bind address is a special case and thanks to this issue on
+https://github.com/ratpack/ratpack/issues/1032[github] I was able to figure it out.
+
+From the top let’s create a new ratpack application and get it to run on OpenShift.
+
+First you will want to sign up for an account on
+https://www.openshift.com/devpreview/register.html[OpenShift]. This should be pretty simple since
+they give you the option to log in with a github account.
+
+We will be using lazybones to create a Ratpack application. This
+is by far the easiest way to create a new Ratpack application, and saves you from writing all
+the boilerplate. The easiest way to install lazybones is with http://sdkman.io/[SDK Man], but for
+other installation instructions and usage see the
+https://github.com/pledbrook/lazybones[lazybones project on GitHub].
+
+Now that you have lazybones install, lets create our Ratpack application.
+
+[source, bash]
+----
+$ lazybones create ratpack my-openshift-app
+----
+
+Next you want to cd into the directory and create the `.openshift` folder. This folder will contain
+scripts that tell Open Shift how to manage your app.
+
+[source, bash]
+----
+$ cd my-openshift-app
+$ mkdir .openshift
+----
+
+First let’s setup the `build` script. This will tell OpenShift how to build your project and where
+to log the output too.
+
+.openshift/build
+[source, bash]
+----
+include::{openshift}/build
+----
+
+Next let’s make the start script. This will tell OpenShift how to start your application. A few
+key things to note in this file are the exports. We need to set `JAVA_HOME` to
+`/etc/alternatives/java_sdk_1.8.0` because the DIY cartridges ship with Java 1.7. Next we need to
+set `RATPACK_SERVER__ADDRESS` and `RATPACK_SERVER__PORT` to the values provided by OpenShift DIY
+cartridge to tell Ratpack what port and address to bind to. Without this you will get an exception
+from netty about not being able to bind to a socket.
+
+.openshift/start
+[source, bash]
+----
+include::{openshift}/start
+----
+
+Lastly, we should make a stop script in order for the application to be shut down.
+
+.openshift/stop
+[source, bash]
+----
+include::{openshift}/stop
+----
+
+Now that we have our project all setup, we need to create a project in OpenShift. Navigate to your
+OpenShift Console and click the `Add Application…` button. At the bottom of the list of
+cartridges to choose from there should be a Do-It-Youself 0.1. Click it to select it. Next we will

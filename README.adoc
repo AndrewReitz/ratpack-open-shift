@@ -1,0 +1,3 @@
+= Ratpack on Open Shift
+
+Full Notes @ TODO

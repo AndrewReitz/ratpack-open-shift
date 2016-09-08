@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -x
+
+jps | grep trail-info | cut -d ' ' -f 1 | xargs kill
+
+exit 0
